@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup C — Fast Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#121614; --raise:#1B211E; --raise2:#232B27; --line:#2E3833;
+    --ink:#EDF2EE; --muted:#93A29B; --faint:#68766F;
+    --lime:#9FE870; --lime-ink:#12331A;
+    --hot:#FF7A5C; --warm:#FFC061; --cool:#6FD8A0;
+    --r:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0C100E;color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.5;padding:28px 20px 60px;-webkit-font-smoothing:antialiased}
+
+  .lede{max-width:900px;margin:0 auto 26px}
+  .lede .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--lime-ink);background:var(--lime);padding:5px 10px;border-radius:6px}
+  .lede h1{font-size:30px;margin:10px 0 6px;letter-spacing:-.025em;font-weight:700}
+  .lede p{color:var(--muted);font-size:14.5px;max-width:62ch}
+
+  .board{display:flex;gap:24px;justify-content:center;align-items:flex-start;flex-wrap:wrap;max-width:900px;margin:0 auto}
+  .screen{width:380px;background:var(--bg);border:1px solid var(--line);border-radius:30px;padding:20px 16px 0;box-shadow:0 20px 50px rgba(0,0,0,.5);overflow:hidden;position:relative}
+  .screen-label{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:0 0 8px 6px}
+
+  .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .hd h2{font-size:24px;font-weight:700;letter-spacing:-.03em}
+  .hd .s{font-size:12px;color:var(--faint);margin-top:1px;font-weight:500}
+  .av{width:34px;height:34px;border-radius:50%;background:var(--raise2);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--muted)}
+
+  /* streak strip */
+  .streak{display:flex;gap:4px;margin-bottom:18px}
+  .streak i{flex:1;height:5px;border-radius:3px;background:var(--raise2)}
+  .streak i.on{background:var(--lime)}
+  .streak i.mid{background:#5C7A45}
+
+  /* big actions */
+  .acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .act{background:var(--raise);border:1px solid var(--line);border-radius:var(--r);padding:16px 14px 15px;cursor:pointer;transition:.12s}
+  .act:hover{border-color:#3E4A44}
+  .act.primary{background:var(--lime);border-color:var(--lime)}
+  .act .ic{font-size:20px;line-height:1}
+  .act .t{font-size:15px;font-weight:600;margin-top:9px;letter-spacing:-.01em}
+  .act .d{font-size:11.5px;color:var(--faint);margin-top:2px}
+  .act.primary .t{color:var(--lime-ink)}
+  .act.primary .d{color:#3D6B33}
+
+  .sheet{background:var(--raise);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+  .sheet .lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:9px}
+  .sheet input{width:100%;background:var(--raise2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;font-family:inherit;font-size:15px;color:var(--ink);font-weight:500}
+  .sheet input::placeholder{color:var(--faint)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .chip{font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--raise2);color:var(--muted);border-radius:999px;padding:9px 14px;cursor:pointer}
+  .chip.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime)}
+  .chip.more{border-style:dashed;color:var(--faint);background:transparent}
+  .quick{font-size:11.5px;color:var(--faint);margin-top:10px}
+  .quick b{color:var(--muted)}
+
+  .opt{display:flex;gap:7px;margin-top:12px}
+  .opt span{flex:1;text-align:center;background:var(--raise2);border:1px solid var(--line);border-radius:10px;padding:9px 4px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer}
+  .opt span.on{border-color:var(--lime);color:var(--lime)}
+  .cta{width:100%;margin-top:14px;background:var(--lime);color:var(--lime-ink);border:none;border-radius:13px;padding:15px;font-family:inherit;font-size:15.5px;font-weight:700;cursor:pointer;letter-spacing:-.01em}
+
+  /* severity dial */
+  .sev{display:flex;gap:7px;margin-top:10px}
+  .sev b{flex:1;text-align:center;background:var(--raise2);border:1px solid var(--line);border-radius:12px;padding:14px 0 11px;font-size:19px;font-weight:700;cursor:pointer;color:var(--muted)}
+  .sev b .c{display:block;font-size:9.5px;font-weight:600;color:var(--faint);margin-top:4px;letter-spacing:.03em}
+  .sev b.on{color:#121614}
+  .sev b:nth-child(4).on{background:var(--hot);border-color:var(--hot)}
+  .sev b.on .c{color:rgba(18,22,20,.65)}
+
+  /* feed */
+  .feed{margin-top:4px}
+  .fi{display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .fi:last-child{border-bottom:none}
+  .fi .tm{font-size:11px;color:var(--faint);font-weight:600;width:44px;flex:none;padding-top:2px;font-variant-numeric:tabular-nums}
+  .fi .bd .t{font-size:14px;font-weight:600;letter-spacing:-.01em}
+  .fi .bd .tags{font-size:11.5px;color:var(--faint);margin-top:2px}
+  .fi .pill{margin-left:auto;flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px}
+
+  /* insights */
+  .hero{background:linear-gradient(160deg,#1E2A21,#182119);border:1px solid #2C3A2F;border-radius:20px;padding:20px 18px;margin-bottom:14px;position:relative;overflow:hidden}
+  .hero .glow{position:absolute;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(159,232,112,.16),transparent 70%);top:-70px;right:-50px}
+  .hero .k{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
+  .hero h3{font-size:26px;font-weight:700;letter-spacing:-.03em;margin:9px 0 8px;line-height:1.15}
+  .hero h3 span{color:var(--hot)}
+  .hero p{font-size:13px;color:var(--muted);line-height:1.55}
+  .hero .num{display:flex;gap:22px;margin-top:15px;padding-top:14px;border-top:1px solid #2C3A2F}
+  .hero .num div .v{font-size:20px;font-weight:700;letter-spacing:-.02em}
+  .hero .num div .l{font-size:10.5px;color:var(--faint);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-top:1px}
+
+  .tabs{display:flex;gap:6px;margin-bottom:14px;overflow:auto;padding-bottom:2px}
+  .tb{white-space:nowrap;font-size:12.5px;font-weight:600;background:var(--raise);border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;color:var(--muted)}
+  .tb.on{background:var(--ink);color:#121614;border-color:var(--ink)}
+
+  .lr{padding:13px 0;border-bottom:1px solid var(--line)}
+  .lr:last-child{border-bottom:none}
+  .lr .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .lr .nm{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+  .lr .dv{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  .dv.up{color:var(--hot)} .dv.dn{color:var(--cool)} .dv.nil{color:var(--faint)}
+  .meter{height:6px;background:var(--raise2);border-radius:4px;margin-top:9px;position:relative;overflow:hidden}
+  .meter i{position:absolute;top:0;bottom:0;left:0;border-radius:4px}
+  .lr .sub{font-size:11.5px;color:var(--faint);margin-top:7px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .bd{font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;border-radius:5px;padding:3px 7px}
+  .bd.s{background:rgba(255,122,92,.16);color:var(--hot)}
+  .bd.p{background:rgba(255,192,97,.14);color:var(--warm)}
+  .bd.n{background:var(--raise2);color:var(--faint)}
+  .bd.g{background:rgba(111,216,160,.14);color:var(--cool)}
+
+  .note{background:rgba(255,192,97,.08);border:1px solid rgba(255,192,97,.22);border-radius:13px;padding:13px;font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:14px}
+  .note b{color:var(--warm)}
+  .quest{background:var(--lime);color:var(--lime-ink);border-radius:var(--r);padding:16px;margin-top:14px}
+  .quest .k{font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;opacity:.6}
+  .quest h4{font-size:17px;font-weight:700;letter-spacing:-.02em;margin:7px 0 5px}
+  .quest p{font-size:12.5px;opacity:.72;line-height:1.5}
+  .quest button{margin-top:12px;width:100%;background:var(--lime-ink);color:var(--lime);border:none;border-radius:11px;padding:12px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+
+  /* bottom nav */
+  .nav{display:flex;gap:2px;margin:16px -16px 0;background:var(--raise);border-top:1px solid var(--line);padding:10px 16px 16px}
+  .nav a{flex:1;text-align:center;font-size:10.5px;font-weight:600;color:var(--faint);text-decoration:none;letter-spacing:.02em}
+  .nav a .i{display:block;font-size:17px;margin-bottom:3px;filter:grayscale(1) opacity(.5)}
+  .nav a.on{color:var(--lime)}
+  .nav a.on .i{filter:none}
+  .foot{font-size:10.5px;color:var(--faint);text-align:center;margin-top:14px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="lede">
+  <span class="tag">Direction C</span>
+  <h1>Fast Log</h1>
+  <p>Built around the only metric that decides whether this app works: does someone still log on day 40? Dark, thumb-sized targets, two taps to record a meal, recent tags surfaced first. Insights lead with one blunt headline and hide the statistics one level down. The most app-like of the three, and the least like the thing you already have.</p>
+</div>
+
+<div class="board">
+
+  <div>
+    <div class="screen-label">Log</div>
+    <div class="screen">
+      <div class="hd">
+        <div>
+          <h2>Today</h2>
+          <div class="s">Sat 15 Aug · day 34</div>
+        </div>
+        <div class="av">PJ</div>
+      </div>
+
+      <div class="streak">
+        <i class="on"></i><i class="on"></i><i class="mid"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+      </div>
+
+      <div class="acts">
+        <div class="act primary">
+          <div class="ic">🍽</div>
+          <div class="t">Log a meal</div>
+          <div class="d">2 taps</div>
+        </div>
+        <div class="act">
+          <div class="ic">📉</div>
+          <div class="t">Log a symptom</div>
+          <div class="d">how are you now?</div>
+        </div>
+      </div>
+
+      <div class="sheet">
+        <div class="lbl">What did you eat?</div>
+        <input value="Chicken biryani">
+        <div class="chips">
+          <span class="chip on">Alliums</span>
+          <span class="chip on">Dairy</span>
+          <span class="chip on">Fried oil</span>
+          <span class="chip">Eggs</span>
+          <span class="chip">Gluten</span>
+          <span class="chip more">+22</span>
+        </div>
+        <div class="quick">Shown first because you tag them most — <b>alliums</b> is on 71% of your meals.</div>
+        <div class="opt">
+          <span class="on">Now · 8:40pm</span>
+          <span>Dinner</span>
+          <span class="on">Ate out</span>
+        </div>
+        <button class="cta">Save meal</button>
+      </div>
+
+      <div class="sheet">
+        <div class="lbl">Today's entries</div>
+        <div class="feed">
+          <div class="fi">
+            <span class="tm">08:15</span>
+            <div class="bd"><div class="t">Poha, filter coffee</div><div class="tags">alliums · caffeine</div></div>
+          </div>
+          <div class="fi">
+            <span class="tm">11:30</span>
+            <div class="bd"><div class="t">Bloating</div></div>
+            <span class="pill" style="background:rgba(255,192,97,.16);color:var(--warm)">2/5</span>
+          </div>
+          <div class="fi">
+            <span class="tm">13:40</span>
+            <div class="bd"><div class="t">Dal, rice, curd, bhindi</div><div class="tags">legumes · dairy</div></div>
+          </div>
+          <div class="fi">
+            <span class="tm">17:05</span>
+            <div class="bd"><div class="t">Foul-smelling gas</div></div>
+            <span class="pill" style="background:rgba(255,122,92,.18);color:var(--hot)">4/5</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav">
+        <a class="on"><span class="i">✏️</span>Log</a>
+        <a><span class="i">📊</span>Insights</a>
+        <a><span class="i">🧪</span>Tests</a>
+        <a><span class="i">⚙️</span>You</a>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="screen-label">Insights</div>
+    <div class="screen">
+      <div class="hd">
+        <div>
+          <h2>Insights</h2>
+          <div class="s">34 days · 82 meals</div>
+        </div>
+        <div class="av">PJ</div>
+      </div>
+
+      <div class="tabs">
+        <span class="tb on">Foul gas</span>
+        <span class="tb">Constipation</span>
+        <span class="tb">Bloating</span>
+      </div>
+
+      <div class="hero">
+        <span class="glow"></span>
+        <div class="k">Strongest signal</div>
+        <h3>It's the <span>eggs</span>.</h3>
+        <p>Your gas rates 4.1 out of 5 after eating eggs, and 2.3 when you don't. That gap held up across 34 days.</p>
+        <div class="num">
+          <div><div class="v" style="color:var(--hot)">+1.8</div><div class="l">Severity</div></div>
+          <div><div class="v">11</div><div class="l">Days with</div></div>
+          <div><div class="v">23</div><div class="l">Days without</div></div>
+        </div>
+      </div>
+
+      <div class="sheet">
+        <div class="lbl">Everything else</div>
+        <div class="lr">
+          <div class="top"><span class="nm">Dairy</span><span class="dv up">+1.2</span></div>
+          <div class="meter"><i style="width:44%;background:var(--warm)"></i></div>
+          <div class="sub"><span class="bd p">Possible</span> 19 with · 15 without</div>
+        </div>
+        <div class="lr">
+          <div class="top"><span class="nm">Alliums</span><span class="dv up">+0.9</span></div>
+          <div class="meter"><i style="width:33%;background:var(--warm)"></i></div>
+          <div class="sub"><span class="bd p">Possible</span> tangled with dairy</div>
+        </div>
+        <div class="lr">
+          <div class="top"><span class="nm">Cruciferous</span><span class="dv nil">+0.4</span></div>
+          <div class="meter"><i style="width:15%;background:#3A443E"></i></div>
+          <div class="sub"><span class="bd n">No signal</span> need 4 more days</div>
+        </div>
+        <div class="lr">
+          <div class="top"><span class="nm">Rice</span><span class="dv dn">−0.7</span></div>
+          <div class="meter"><i style="width:26%;background:var(--cool)"></i></div>
+          <div class="sub"><span class="bd g">Looks safe</span> 27 days with</div>
+        </div>
+        <div class="lr" style="text-align:center;color:var(--faint);font-size:12px;padding-top:13px">
+          9 quiet tags · <span style="color:var(--lime);font-weight:600">show all</span>
+        </div>
+      </div>
+
+      <div class="note"><b>Heads up — onion and garlic travel together.</b> They're in 80% of the same meals, so we can't tell them apart yet.</div>
+
+      <div class="quest">
+        <div class="k">Next test</div>
+        <h4>Garlic without onion, ×3</h4>
+        <p>Three meals is all it takes to split these two apart. We'll watch and call it.</p>
+        <button>Start test</button>
+      </div>
+
+      <div class="foot">Patterns in your log — not medical advice.</div>
+
+      <div class="nav">
+        <a><span class="i">✏️</span>Log</a>
+        <a class="on"><span class="i">📊</span>Insights</a>
+        <a><span class="i">🧪</span>Tests</a>
+        <a><span class="i">⚙️</span>You</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup A — Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF1EA; --panel:#FBFBF7; --ink:#1C2621; --muted:#61706A; --line:#DCE1D6;
+    --pine:#2E5D4B; --pine-soft:#E4EDE6; --amber:#C77D3A; --brick:#B4472E; --brick-soft:#F5E3DD;
+    --radius:14px; --shadow:0 1px 2px rgba(28,38,33,.05),0 8px 24px rgba(28,38,33,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#E4E8DF;color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.5;padding:28px 20px 60px;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.serif{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em;line-height:1.15}
+
+  .lede{max-width:900px;margin:0 auto 26px}
+  .lede .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--pine);background:var(--pine-soft);padding:5px 10px;border-radius:6px}
+  .lede h1{font-size:30px;margin:10px 0 6px}
+  .lede p{color:var(--muted);font-size:14.5px;max-width:62ch}
+
+  .board{display:flex;gap:24px;justify-content:center;align-items:flex-start;flex-wrap:wrap;max-width:900px;margin:0 auto}
+  .screen{width:400px;background:var(--bg);border:1px solid #CFD6C9;border-radius:26px;padding:18px 16px 26px;box-shadow:0 18px 44px rgba(28,38,33,.13)}
+  .screen-label{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 8px 6px}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 2px}
+  .topbar .day{font-size:12px;color:var(--muted);font-weight:500}
+  .topbar .name{font-family:'Fraunces',serif;font-size:20px}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--pine);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:600}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .card h2{font-size:17px}
+  .card .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+
+  /* timeline */
+  .tl{position:relative;padding-left:26px;margin-top:14px}
+  .tl:before{content:"";position:absolute;left:8px;top:6px;bottom:14px;width:2px;background:var(--line)}
+  .ev{position:relative;margin-bottom:14px}
+  .ev:before{content:"";position:absolute;left:-22px;top:5px;width:11px;height:11px;border-radius:50%;background:var(--pine);border:2px solid var(--panel);box-shadow:0 0 0 1.5px var(--pine)}
+  .ev.sym:before{background:var(--amber);box-shadow:0 0 0 1.5px var(--amber)}
+  .ev .t{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.03em}
+  .ev .title{font-size:14px;font-weight:600;margin-top:1px}
+  .ev .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .tg{font-size:11px;font-weight:500;background:var(--pine-soft);color:var(--pine);border-radius:6px;padding:2.5px 7px}
+  .tg.out{background:#F4E7D9;color:#9A5A23}
+  .sevpill{display:inline-block;font-size:11px;font-weight:700;color:#fff;border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:1px}
+
+  .addrow{display:flex;gap:8px;margin-top:6px}
+  .add{flex:1;background:#fff;border:1px dashed #C6D0C4;border-radius:11px;padding:11px;font-family:inherit;font-size:13px;font-weight:600;color:var(--pine);cursor:pointer}
+  .add:hover{background:var(--pine-soft);border-style:solid}
+
+  /* quick compose */
+  .compose textarea{width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;resize:none;min-height:44px;color:var(--ink)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chip{font-size:12px;font-weight:500;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;cursor:pointer}
+  .chip.on{background:var(--pine);color:#fff;border-color:var(--pine)}
+  .chip.more{border-style:dashed;color:var(--muted)}
+  .metarow{display:flex;align-items:center;gap:8px;margin-top:11px;font-size:12px;color:var(--muted)}
+  .metarow .pillbtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:500;color:var(--ink);cursor:pointer}
+  .btn{background:var(--pine);color:#fff;border:none;border-radius:11px;padding:12px;font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer;width:100%;margin-top:12px}
+
+  /* insights */
+  .verdict{background:linear-gradient(180deg,#FBFBF7,#F4F7F1);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;box-shadow:var(--shadow);margin-bottom:12px}
+  .verdict .eyebrow{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+  .verdict h2{font-size:23px;margin:7px 0 6px;line-height:1.2}
+  .verdict h2 em{font-style:normal;color:var(--brick);border-bottom:3px solid var(--brick-soft)}
+  .verdict p{font-size:13px;color:var(--muted);line-height:1.5}
+  .conf{display:inline-flex;align-items:center;gap:6px;margin-top:11px;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--pine);color:#fff;padding:5px 11px;border-radius:999px}
+
+  .symtabs{display:flex;gap:6px;margin-bottom:12px;overflow:auto}
+  .symtab{white-space:nowrap;font-size:12.5px;font-weight:600;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 13px;cursor:pointer;color:var(--muted)}
+  .symtab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .rank{margin-top:6px}
+  .row{padding:11px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .row .l{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .row .food{font-size:14px;font-weight:600}
+  .row .eff{font-family:'Fraunces',serif;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+  .row .eff.up{color:var(--brick)} .row .eff.dn{color:#3E7A55}
+  .track{height:8px;background:#E7EBE4;border-radius:5px;margin-top:7px;position:relative;overflow:hidden}
+  .fill{position:absolute;top:0;bottom:0;left:50%;border-radius:5px}
+  .track:after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#C3CDC0}
+  .row .note{font-size:11.5px;color:var(--muted);margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .badge{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:5px;padding:2.5px 6px}
+  .badge.strong{background:#F3DDD6;color:#8E3722}
+  .badge.maybe{background:#F5E7D3;color:#8A5A1E}
+  .badge.none{background:#E7EBE4;color:#5F6E67}
+  .badge.safe{background:#DDEBE0;color:#2E5D4B}
+
+  .warn{background:#FAF3E6;border:1px solid #E9DCC1;border-radius:11px;padding:12px 13px;font-size:12.5px;line-height:1.5;color:#6E5A2E;margin-top:12px}
+  .warn b{color:#4A3D1C}
+  .exp{background:var(--pine);color:#fff;border-radius:var(--radius);padding:16px;margin-top:12px}
+  .exp .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;opacity:.75}
+  .exp h3{font-size:16px;margin:6px 0 5px;color:#fff}
+  .exp p{font-size:12.5px;opacity:.85;line-height:1.5}
+  .exp button{margin-top:11px;width:100%;background:#fff;color:var(--pine);border:none;border-radius:9px;padding:10px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+  .foot{font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<div class="lede">
+  <span class="tag">Direction A</span>
+  <h1>The Journal</h1>
+  <p>Warm, papery, unhurried — a direct evolution of the app you already have. The day is a vertical timeline you add to, and insights are written as sentences before they are written as numbers. Reads like something you keep, not something that audits you.</p>
+</div>
+
+<div class="board">
+
+  <div>
+    <div class="screen-label">Log</div>
+    <div class="screen">
+      <div class="topbar">
+        <div>
+          <div class="day">Saturday, 15 August · day 34</div>
+          <div class="name">Today</div>
+        </div>
+        <div class="avatar">PJ</div>
+      </div>
+
+      <div class="card compose">
+        <h2>Add a meal</h2>
+        <div class="sub">What you ate, roughly. Tag the parts that matter.</div>
+        <textarea placeholder="e.g. rajma chawal with a side of curd">Chicken biryani from Paradise</textarea>
+        <div class="chips">
+          <span class="chip on">Alliums</span>
+          <span class="chip on">Dairy</span>
+          <span class="chip on">Fried / oily</span>
+          <span class="chip">Eggs</span>
+          <span class="chip">Gluten</span>
+          <span class="chip">Legumes</span>
+          <span class="chip more">+ 22 more</span>
+        </div>
+        <div class="metarow">
+          <span class="pillbtn">🕗 8:40 pm</span>
+          <span class="pillbtn">Dinner</span>
+          <span class="pillbtn">Ate out ✓</span>
+        </div>
+        <button class="btn">Save meal</button>
+      </div>
+
+      <div class="card">
+        <h2>Today so far</h2>
+        <div class="sub">3 meals · 2 symptoms logged</div>
+        <div class="tl">
+          <div class="ev">
+            <div class="t">08:15 · BREAKFAST</div>
+            <div class="title">Poha, filter coffee</div>
+            <div class="tags"><span class="tg">Alliums</span><span class="tg">Caffeine</span></div>
+          </div>
+          <div class="ev sym">
+            <div class="t">11:30</div>
+            <div class="title">Bloating <span class="sevpill" style="background:#7A9E4E">2</span></div>
+          </div>
+          <div class="ev">
+            <div class="t">13:40 · LUNCH</div>
+            <div class="title">Dal, rice, curd, bhindi</div>
+            <div class="tags"><span class="tg">Legumes</span><span class="tg">Dairy</span></div>
+          </div>
+          <div class="ev sym">
+            <div class="t">17:05</div>
+            <div class="title">Foul-smelling gas <span class="sevpill" style="background:#B4472E">4</span></div>
+          </div>
+          <div class="ev" style="margin-bottom:2px">
+            <div class="t">20:40 · DINNER</div>
+            <div class="title">Chicken biryani</div>
+            <div class="tags"><span class="tg out">ate out</span><span class="tg">Alliums</span><span class="tg">Dairy</span></div>
+          </div>
+        </div>
+        <div class="addrow">
+          <button class="add">+ Meal</button>
+          <button class="add">+ Symptom</button>
+        </div>
+      </div>
+
+      <div class="foot">Times are optional. Skip them and the day still counts.</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="screen-label">Insights</div>
+    <div class="screen">
+      <div class="topbar">
+        <div>
+          <div class="day">34 days · 82 meals · 51 symptom entries</div>
+          <div class="name">What your log says</div>
+        </div>
+        <div class="avatar">PJ</div>
+      </div>
+
+      <div class="symtabs">
+        <span class="symtab on">Foul-smelling gas</span>
+        <span class="symtab">Constipation</span>
+        <span class="symtab">Bloating</span>
+      </div>
+
+      <div class="verdict">
+        <div class="eyebrow">Clearest signal</div>
+        <h2>Your gas is worse on days you eat <em>eggs</em>.</h2>
+        <p>Averaging 4.1 out of 5 in the 12 hours after an egg meal, against 2.3 otherwise. Seen across 11 egg days and 23 without — a gap this large came up by chance in under 1 in 200 shuffles of your own data.</p>
+        <span class="conf">Strong signal</span>
+      </div>
+
+      <div class="card">
+        <h2>Everything else, ranked</h2>
+        <div class="sub">Change in average severity versus days without the food.</div>
+        <div class="rank">
+          <div class="row">
+            <div class="l"><span class="food">Eggs</span><span class="eff up">+1.8</span></div>
+            <div class="track"><span class="fill" style="width:36%;background:#B4472E"></span></div>
+            <div class="note"><span class="badge strong">Strong</span> 11 days with · 23 without</div>
+          </div>
+          <div class="row">
+            <div class="l"><span class="food">Dairy</span><span class="eff up">+1.2</span></div>
+            <div class="track"><span class="fill" style="width:24%;background:#C77D3A"></span></div>
+            <div class="note"><span class="badge maybe">Possible</span> 19 days with · 15 without</div>
+          </div>
+          <div class="row">
+            <div class="l"><span class="food">Alliums</span><span class="eff up">+0.9</span></div>
+            <div class="track"><span class="fill" style="width:18%;background:#C77D3A"></span></div>
+            <div class="note"><span class="badge maybe">Possible</span> tangled with dairy</div>
+          </div>
+          <div class="row">
+            <div class="l"><span class="food">Cruciferous</span><span class="eff up">+0.4</span></div>
+            <div class="track"><span class="fill" style="width:8%;background:#C6CFC4"></span></div>
+            <div class="note"><span class="badge none">No signal</span> too small to trust</div>
+          </div>
+          <div class="row">
+            <div class="l"><span class="food">Rice</span><span class="eff dn">−0.7</span></div>
+            <div class="track"><span class="fill" style="width:14%;background:#4C8A5E;left:auto;right:50%"></span></div>
+            <div class="note"><span class="badge safe">Looks safe</span> 27 days with</div>
+          </div>
+        </div>
+
+        <div class="warn"><b>Onion and garlic move together.</b> They appear in 80% of the same meals, so your log can't yet tell which one matters. The experiment below separates them.</div>
+      </div>
+
+      <div class="exp">
+        <div class="eyebrow">Suggested experiment</div>
+        <h3>Eat garlic without onion, three times</h3>
+        <p>Two weeks of ordinary logging won't untangle these two. Three deliberate meals will. We'll track it and tell you the answer.</p>
+        <button>Start this experiment</button>
+      </div>
+
+      <div class="foot">Associations from your own log, not a diagnosis.<br>Persistent or worsening symptoms deserve a doctor.</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

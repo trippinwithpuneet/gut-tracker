@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gut Reset — Elimination Tracker</title>
+<meta name="description" content="A private, offline elimination-diet tracker for pinning down what makes gut gas worse. No accounts, no server — your data stays in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF1EA;
+    --panel:#FBFBF7;
+    --ink:#1C2621;
+    --muted:#61706A;
+    --line:#DCE1D6;
+    --pine:#2E5D4B;
+    --pine-soft:#E4EDE6;
+    --amber:#C77D3A;
+    --brick:#B4472E;
+    --brick-soft:#F5E3DD;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(28,38,33,.05),0 8px 24px rgba(28,38,33,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.5;
+    padding:20px 16px 80px;
+    max-width:720px;
+    margin:0 auto;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em;line-height:1.1}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--pine)}
+
+  header{margin-bottom:20px}
+  header h1{font-size:34px;margin:6px 0 4px}
+  header p{color:var(--muted);font-size:14.5px;max-width:52ch}
+
+  .phase{display:flex;gap:10px;margin:18px 0}
+  .phase .p{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;position:relative;overflow:hidden}
+  .phase .p.active{border-color:var(--pine);box-shadow:var(--shadow)}
+  .phase .p .lbl{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .phase .p.active .lbl{color:var(--pine)}
+  .phase .p .ttl{font-family:'Fraunces',serif;font-size:16px;margin-top:2px}
+  .phase .p .desc{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.35}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+  .card > h2{font-size:20px;margin-bottom:2px}
+  .card .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+
+  label.field{display:block;font-size:13px;font-weight:600;color:var(--ink);margin:14px 0 6px}
+  label.field span{font-weight:400;color:var(--muted)}
+  input[type=text],input[type=date],textarea{
+    width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;font-family:inherit;font-size:14.5px;color:var(--ink);
+  }
+  textarea{resize:vertical;min-height:46px}
+  input:focus,textarea:focus{outline:2px solid var(--pine);outline-offset:1px;border-color:transparent}
+
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--pine-soft);border-radius:10px;padding:12px 14px;margin-top:14px}
+  .toggle-row .t-txt{font-size:14px;font-weight:600}
+  .toggle-row .t-txt small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+  .switch{position:relative;width:48px;height:28px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#C3CEC4;border-radius:20px;transition:.2s;cursor:pointer}
+  .slider:before{content:"";position:absolute;height:22px;width:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .switch input:checked + .slider{background:var(--pine)}
+  .switch input:checked + .slider:before{transform:translateX(20px)}
+  .switch input:focus-visible + .slider{outline:2px solid var(--ink);outline-offset:2px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .chip{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 13px;font-size:13px;font-weight:500;color:var(--ink);transition:.12s;user-select:none}
+  .chip input{display:none}
+  .chip .dot{width:8px;height:8px;border-radius:50%;background:#C9D2C9;flex:none;transition:.12s}
+  .chip.sel{background:var(--pine);color:#fff;border-color:var(--pine)}
+  .chip.sel .dot{background:#fff}
+  .chip.outside{border-style:dashed}
+  .chip.outside.sel{background:var(--amber);border-color:var(--amber)}
+
+  .scale{display:flex;gap:6px;margin-top:8px}
+  .scale button{flex:1;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 4px 8px;cursor:pointer;font-family:inherit;transition:.12s;color:var(--ink)}
+  .scale button .n{display:block;font-family:'Fraunces',serif;font-size:22px;font-weight:600;line-height:1}
+  .scale button .cap{display:block;font-size:10px;color:var(--muted);margin-top:5px;line-height:1.2;min-height:24px}
+  .scale button[data-sev].sel{color:#fff}
+  .scale button.sel .cap{color:rgba(255,255,255,.85)}
+  .scale button[data-sev="1"].sel{background:#4C8A5E;border-color:#4C8A5E}
+  .scale button[data-sev="2"].sel{background:#7A9E4E;border-color:#7A9E4E}
+  .scale button[data-sev="3"].sel{background:var(--amber);border-color:var(--amber)}
+  .scale button[data-sev="4"].sel{background:#B85C2E;border-color:#B85C2E}
+  .scale button[data-sev="5"].sel{background:var(--brick);border-color:var(--brick)}
+
+  .checks{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .check{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;cursor:pointer;user-select:none}
+  .check input{width:17px;height:17px;accent-color:var(--pine);flex:none}
+  .check.flag{border-color:#E7C4B9}
+  .check.flag input{accent-color:var(--brick)}
+
+  .redflag-note{display:none;background:var(--brick-soft);border:1px solid #E7C4B9;color:#7A2E1C;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-top:10px;line-height:1.4}
+  .redflag-note.show{display:block}
+
+  .btn{background:var(--pine);color:#fff;border:none;border-radius:11px;padding:13px 20px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;width:100%;margin-top:20px;transition:.12s}
+  .btn:hover{background:#274f40}
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:transparent;color:var(--pine);border:1px solid var(--line);margin-top:0}
+  .btn.ghost:hover{background:var(--pine-soft)}
+
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
+  .stat .k{font-size:11.5px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .stat .v{font-family:'Fraunces',serif;font-size:30px;font-weight:600;margin-top:4px;line-height:1}
+  .stat .v small{font-size:14px;color:var(--muted);font-weight:400}
+  .stat .foot{font-size:12px;color:var(--muted);margin-top:4px}
+  .insight-line{font-size:13.5px;color:var(--ink);background:var(--pine-soft);border-radius:10px;padding:11px 13px;margin-top:12px;line-height:1.45}
+  .insight-line b{color:var(--pine)}
+  .suspect{display:flex;align-items:center;justify-content:space-between;font-size:13.5px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .suspect:last-child{border-bottom:none}
+  .barwrap{flex:1;margin:0 12px;background:#EBEFE9;border-radius:4px;height:7px;overflow:hidden}
+  .bar{height:7px;border-radius:4px;background:var(--amber)}
+
+  .entry{border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-top:10px;background:#fff}
+  .entry .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .entry .date{font-weight:600;font-size:14px}
+  .entry .sevpill{font-size:12px;font-weight:600;color:#fff;border-radius:999px;padding:3px 10px}
+  .entry .meta{font-size:12.5px;color:var(--muted);margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
+  .entry .tag{background:var(--pine-soft);color:var(--pine);border-radius:6px;padding:2px 7px;font-weight:500}
+  .entry .tag.out{background:#F4E7D9;color:#9A5A23}
+  .entry .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;text-decoration:underline;padding:4px}
+  .empty{color:var(--muted);font-size:13.5px;text-align:center;padding:20px 0}
+
+  .datatools{display:flex;gap:8px;margin-bottom:12px}
+  .datatools .btn{margin-top:0;padding:9px;font-size:13px}
+
+  .status{font-size:12.5px;color:var(--pine);text-align:center;height:16px;margin-top:8px;transition:.2s;opacity:0}
+  .status.show{opacity:1}
+
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px;line-height:1.6}
+  footer a{color:var(--pine)}
+  @media (max-width:480px){
+    header h1{font-size:28px}
+    .phase{flex-direction:column}
+    .checks{grid-template-columns:1fr}
+    .scale button .cap{display:none}
+    .scale button{padding:12px 4px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">2-Week Elimination Protocol</div>
+  <h1>Gut Reset</h1>
+  <p>Log what you eat and how the gas behaves. After a week of cutting the usual suspects, add them back one at a time — the tracker will point at what's actually driving the smell.</p>
+</header>
+
+<div class="phase" id="phaseStrip">
+  <div class="p" data-phase="1">
+    <div class="lbl">Days 1–7</div>
+    <div class="ttl">Eliminate</div>
+    <div class="desc">Cut eggs, dairy, legumes, onion/garlic, cruciferous, outside chicken &amp; oil. Eat plain.</div>
+  </div>
+  <div class="p" data-phase="2">
+    <div class="lbl">Days 8–14</div>
+    <div class="ttl">Reintroduce</div>
+    <div class="desc">Add back one group every 2 days. Watch which one spikes the smell.</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Today's log</h2>
+  <div class="sub">Fill this in each evening while it's fresh.</div>
+
+  <label class="field" for="d">Date</label>
+  <input type="date" id="d">
+
+  <label class="field" for="meals">What you ate <span>— breakfast, lunch, dinner, snacks</span></label>
+  <textarea id="meals" placeholder="e.g. Poha (breakfast) · dal-rice + paneer (lunch) · dosa (dinner)"></textarea>
+
+  <div class="toggle-row">
+    <div class="t-txt">Ate any food from outside?
+      <small>Restaurant, takeout, cloud kitchen — anything not cooked at home</small>
+    </div>
+    <label class="switch"><input type="checkbox" id="outside"><span class="slider"></span></label>
+  </div>
+
+  <label class="field">Trigger foods eaten today <span>— tap all that apply</span></label>
+  <div class="chips" id="chips"></div>
+
+  <label class="field">How bad was the smell? <span>— worst episode today</span></label>
+  <div class="scale" id="scale">
+    <button type="button" data-sev="1"><span class="n">1</span><span class="cap">barely there</span></button>
+    <button type="button" data-sev="2"><span class="n">2</span><span class="cap">noticeable</span></button>
+    <button type="button" data-sev="3"><span class="n">3</span><span class="cap">clears a room</span></button>
+    <button type="button" data-sev="4"><span class="n">4</span><span class="cap">eyes water</span></button>
+    <button type="button" data-sev="5"><span class="n">5</span><span class="cap">wakes the room</span></button>
+  </div>
+
+  <label class="field">Other symptoms</label>
+  <div class="checks" id="symptoms">
+    <label class="check"><input type="checkbox" value="Bloating">Bloating / pressure</label>
+    <label class="check"><input type="checkbox" value="Frequent gas">Frequent gas</label>
+    <label class="check"><input type="checkbox" value="Urgency">Urgency to go</label>
+    <label class="check"><input type="checkbox" value="Cramping">Cramping / pain</label>
+    <label class="check flag"><input type="checkbox" value="Greasy/floating stool">Greasy / floating stool</label>
+    <label class="check flag"><input type="checkbox" value="Loose stool">Loose stool</label>
+  </div>
+  <div class="redflag-note" id="redflag">Greasy or floating stools point to fat malabsorption — if this keeps showing up over the two weeks, it's worth a GP/gastro visit rather than tweaking diet alone.</div>
+
+  <div class="toggle-row" style="margin-top:16px">
+    <div class="t-txt">Took enzymes at the <em>start</em> of meals?
+      <small>They work best swallowed with the first bite, not after</small>
+    </div>
+    <label class="switch"><input type="checkbox" id="enzymes"><span class="slider"></span></label>
+  </div>
+
+  <label class="field" for="notes">Notes <span>— optional</span></label>
+  <textarea id="notes" placeholder="Anything else: timing, stress, sleep, a specific dish you suspect…"></textarea>
+
+  <button class="btn" id="saveBtn">Save today's entry</button>
+  <div class="status" id="status">Saved</div>
+</div>
+
+<div class="card" id="insightCard" style="display:none">
+  <h2>What the data says</h2>
+  <div class="sub">Updates every time you save. More days = sharper signal.</div>
+  <div class="stat-grid">
+    <div class="stat">
+      <div class="k">Avg smell · home food</div>
+      <div class="v" id="avgHome">—</div>
+      <div class="foot" id="homeCount"></div>
+    </div>
+    <div class="stat">
+      <div class="k">Avg smell · outside food</div>
+      <div class="v" id="avgOut">—</div>
+      <div class="foot" id="outCount"></div>
+    </div>
+  </div>
+  <div class="insight-line" id="headlineInsight"></div>
+  <div id="suspectList" style="margin-top:14px"></div>
+</div>
+
+<div class="card">
+  <h2>History</h2>
+  <div class="sub" id="histSub">Your logged days, newest first.</div>
+  <div class="datatools">
+    <button class="btn ghost" id="exportBtn">Export data</button>
+    <button class="btn ghost" id="importBtn">Import data</button>
+    <input type="file" id="importFile" accept="application/json" hidden>
+  </div>
+  <div id="history"></div>
+</div>
+
+<footer>
+  Your entries never leave this device — they're stored in your browser only.<br>
+  A tracker, not a diagnosis. See the red-flag note if flagged symptoms recur.<br>
+  <a href="https://github.com/trippinwithpuneet/gut-tracker">Open source on GitHub</a> · MIT License
+</footer>
+
+<script>
+const TRIGGERS = [
+  {id:'eggs',    label:'Eggs',                  outside:false},
+  {id:'dairy',   label:'Dairy / paneer / yogurt',outside:false},
+  {id:'legumes', label:'Legumes / dal',         outside:false},
+  {id:'allium',  label:'Onion / garlic',        outside:false},
+  {id:'crucifer',label:'Cruciferous veg',       outside:false},
+  {id:'protein', label:'Protein powder',        outside:false},
+  {id:'sugarol', label:'Sugar alcohols',        outside:false},
+  {id:'o_chicken',label:'Chicken (outside)',    outside:true},
+  {id:'o_oil',   label:'Refined / reused oil (outside)',outside:true},
+];
+const SEV_COLORS={1:'#4C8A5E',2:'#7A9E4E',3:'#C77D3A',4:'#B85C2E',5:'#B4472E'};
+
+/* ---------- storage: localStorage with in-memory fallback ---------- */
+const NS='gutreset:';
+let useLS=true, mem={};
+try{ localStorage.setItem(NS+'__t','1'); localStorage.removeItem(NS+'__t'); }catch(e){ useLS=false; }
+
+function sGet(key){ return useLS ? localStorage.getItem(NS+key) : (mem[key]??null); }
+function sSet(key,val){ if(useLS){ try{localStorage.setItem(NS+key,val);}catch(e){mem[key]=val;} } else mem[key]=val; }
+function sDel(key){ if(useLS) localStorage.removeItem(NS+key); else delete mem[key]; }
+function sListDays(){
+  const out=[];
+  if(useLS){ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith(NS+'day:')) out.push(k.slice(NS.length)); } }
+  else out.push(...Object.keys(mem).filter(k=>k.startsWith('day:')));
+  return out;
+}
+
+let selectedTriggers=new Set();
+let selectedSev=null;
+
+/* ---------- trigger chips ---------- */
+const chipsEl=document.getElementById('chips');
+TRIGGERS.forEach(t=>{
+  const l=document.createElement('label');
+  l.className='chip'+(t.outside?' outside':'');
+  l.innerHTML=`<span class="dot"></span>${t.label}<input type="checkbox" value="${t.id}">`;
+  const cb=l.querySelector('input');
+  l.addEventListener('click',e=>{
+    e.preventDefault();
+    cb.checked=!cb.checked;
+    if(cb.checked){selectedTriggers.add(t.id);l.classList.add('sel');}
+    else{selectedTriggers.delete(t.id);l.classList.remove('sel');}
+  });
+  chipsEl.appendChild(l);
+});
+
+/* ---------- severity ---------- */
+document.querySelectorAll('#scale button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#scale button').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');
+    selectedSev=parseInt(b.dataset.sev);
+  });
+});
+
+/* ---------- red flag ---------- */
+const redflag=document.getElementById('redflag');
+document.querySelectorAll('#symptoms .flag input').forEach(cb=>{
+  cb.addEventListener('change',()=>{
+    const any=[...document.querySelectorAll('#symptoms .flag input')].some(x=>x.checked);
+    redflag.classList.toggle('show',any);
+  });
+});
+
+/* ---------- date default ---------- */
+const dEl=document.getElementById('d');
+dEl.value=new Date().toISOString().slice(0,10);
+
+/* ---------- phase ---------- */
+function updatePhase(entries){
+  const strip=document.getElementById('phaseStrip');
+  strip.querySelectorAll('.p').forEach(p=>p.classList.remove('active'));
+  let dayNum=1;
+  if(entries.length){
+    const dates=entries.map(e=>e.date).sort();
+    const first=new Date(dates[0]);
+    const today=new Date(new Date().toISOString().slice(0,10));
+    dayNum=Math.floor((today-first)/86400000)+1;
+  }
+  const phase=dayNum<=7?1:2;
+  const el=strip.querySelector(`.p[data-phase="${phase}"]`);
+  if(el)el.classList.add('active');
+}
+
+/* ---------- save ---------- */
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  const date=dEl.value;
+  if(!date){flash('Pick a date first');return;}
+  if(selectedSev===null){flash('Rate the smell first');return;}
+  const entry={
+    date,
+    meals:document.getElementById('meals').value.trim(),
+    outside:document.getElementById('outside').checked,
+    triggers:[...selectedTriggers],
+    sev:selectedSev,
+    symptoms:[...document.querySelectorAll('#symptoms input:checked')].map(x=>x.value),
+    enzymes:document.getElementById('enzymes').checked,
+    notes:document.getElementById('notes').value.trim(),
+  };
+  sSet('day:'+date, JSON.stringify(entry));
+  flash('Saved for '+date);
+  resetForm();
+  render();
+});
+
+function resetForm(){
+  document.getElementById('meals').value='';
+  document.getElementById('notes').value='';
+  document.getElementById('outside').checked=false;
+  document.getElementById('enzymes').checked=false;
+  document.querySelectorAll('#symptoms input').forEach(x=>x.checked=false);
+  redflag.classList.remove('show');
+  selectedTriggers.clear();
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+  selectedSev=null;
+  document.querySelectorAll('#scale button').forEach(b=>b.classList.remove('sel'));
+  dEl.value=new Date().toISOString().slice(0,10);
+}
+
+function flash(msg){
+  const s=document.getElementById('status');
+  s.textContent=msg;s.classList.add('show');
+  setTimeout(()=>s.classList.remove('show'),1800);
+}
+
+/* ---------- load ---------- */
+function loadEntries(){
+  const out=[];
+  sListDays().forEach(k=>{ const v=sGet(k); if(v){try{out.push(JSON.parse(v));}catch(e){}} });
+  return out.sort((a,b)=>b.date.localeCompare(a.date));
+}
+function triggerLabel(id){const t=TRIGGERS.find(x=>x.id===id);return t?t.label:id;}
+
+/* ---------- render ---------- */
+function render(){
+  const entries=loadEntries();
+  updatePhase(entries);
+  renderHistory(entries);
+  renderInsights(entries);
+}
+
+function renderHistory(entries){
+  const h=document.getElementById('history');
+  const sub=document.getElementById('histSub');
+  h.innerHTML='';
+  if(!entries.length){
+    h.innerHTML='<div class="empty">No entries yet. Log tonight to get started.</div>';
+    sub.textContent='Your logged days will appear here.';
+    return;
+  }
+  sub.textContent=entries.length+' day'+(entries.length>1?'s':'')+' logged.';
+  entries.forEach(e=>{
+    const div=document.createElement('div');
+    div.className='entry';
+    const tags=[];
+    if(e.outside)tags.push('<span class="tag out">outside food</span>');
+    e.triggers.forEach(t=>tags.push('<span class="tag">'+triggerLabel(t)+'</span>'));
+    if(e.enzymes)tags.push('<span class="tag">enzymes ✓</span>');
+    e.symptoms.forEach(s=>tags.push('<span class="tag">'+escapeHtml(s)+'</span>'));
+    div.innerHTML=`
+      <div class="top">
+        <span class="date">${fmtDate(e.date)}</span>
+        <span class="sevpill" style="background:${SEV_COLORS[e.sev]}">smell ${e.sev}/5</span>
+      </div>
+      ${e.meals?`<div class="meta" style="color:var(--ink)">${escapeHtml(e.meals)}</div>`:''}
+      <div class="meta">${tags.join(' ')||'<span style="color:var(--muted)">no triggers logged</span>'}</div>
+      ${e.notes?`<div class="meta" style="font-style:italic">“${escapeHtml(e.notes)}”</div>`:''}
+      <div style="margin-top:8px"><button class="del" data-date="${e.date}">delete</button></div>
+    `;
+    h.appendChild(div);
+  });
+  h.querySelectorAll('.del').forEach(b=>{
+    b.addEventListener('click',()=>{ sDel('day:'+b.dataset.date); render(); });
+  });
+}
+
+function renderInsights(entries){
+  const card=document.getElementById('insightCard');
+  if(entries.length<2){card.style.display='none';return;}
+  card.style.display='';
+  const home=entries.filter(e=>!e.outside);
+  const out=entries.filter(e=>e.outside);
+  const avg=arr=>arr.length?(arr.reduce((s,e)=>s+e.sev,0)/arr.length):null;
+  const aHome=avg(home), aOut=avg(out);
+  setStat('avgHome','homeCount',aHome,home.length);
+  setStat('avgOut','outCount',aOut,out.length);
+
+  const hl=document.getElementById('headlineInsight');
+  if(aHome!==null&&aOut!==null){
+    const diff=(aOut-aHome).toFixed(1);
+    if(aOut-aHome>=0.8){
+      hl.innerHTML=`Outside food runs <b>${diff} points worse</b> on the smell scale than home food. That's a strong signal — the culprit is likely something in restaurant meals (oil load, portion of chicken, or heavy garlic/onion).`;
+    }else if(aHome-aOut>=0.8){
+      hl.innerHTML=`Interesting — your <b>home food</b> scores worse than outside food so far. Look hard at your home staples in the suspect list below rather than blaming restaurants.`;
+    }else{
+      hl.innerHTML=`Home and outside food are scoring about the same right now. The driver is more likely a <b>specific ingredient</b> than eating out itself — check the suspects below.`;
+    }
+  }else{
+    hl.innerHTML=`Log a mix of <b>home and outside days</b> to unlock the home-vs-outside comparison.`;
+  }
+
+  const suspects=[];
+  TRIGGERS.forEach(t=>{
+    const withT=entries.filter(e=>e.triggers.includes(t.id));
+    if(withT.length>=2) suspects.push({label:t.label,avg:avg(withT),n:withT.length});
+  });
+  suspects.sort((a,b)=>b.avg-a.avg);
+  const list=document.getElementById('suspectList');
+  if(suspects.length){
+    list.innerHTML='<div style="font-size:11.5px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px">Foods ranked by smell on days eaten</div>'+
+      suspects.map(s=>`
+        <div class="suspect">
+          <span style="flex:none;min-width:130px">${s.label}</span>
+          <span class="barwrap"><span class="bar" style="display:block;width:${(s.avg/5*100)}%;background:${SEV_COLORS[Math.round(s.avg)]||'#C77D3A'}"></span></span>
+          <span style="flex:none;font-variant-numeric:tabular-nums;font-weight:600">${s.avg.toFixed(1)}<span style="color:var(--muted);font-weight:400">·${s.n}d</span></span>
+        </div>`).join('');
+  }else{
+    list.innerHTML='<div style="font-size:13px;color:var(--muted)">Log each trigger food on at least 2 days to rank suspects.</div>';
+  }
+}
+
+function setStat(vId,cId,val,count){
+  document.getElementById(vId).innerHTML=val!==null?val.toFixed(1)+'<small>/5</small>':'—';
+  document.getElementById(cId).textContent=count?count+' day'+(count>1?'s':''):'no days yet';
+}
+
+function fmtDate(iso){ return new Date(iso+'T00:00:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'}); }
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ---------- export / import ---------- */
+document.getElementById('exportBtn').addEventListener('click',()=>{
+  const data={app:'gut-tracker',version:1,exported:new Date().toISOString(),entries:loadEntries()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='gut-tracker-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(url);
+});
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change',ev=>{
+  const file=ev.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const parsed=JSON.parse(reader.result);
+      const entries=Array.isArray(parsed)?parsed:parsed.entries;
+      if(!Array.isArray(entries)) throw new Error('bad format');
+      let n=0;
+      entries.forEach(e=>{ if(e&&e.date&&typeof e.sev==='number'){ sSet('day:'+e.date,JSON.stringify(e)); n++; } });
+      flash('Imported '+n+' entr'+(n===1?'y':'ies'));
+      render();
+    }catch(e){ flash('Could not read that file'); }
+    ev.target.value='';
+  };
+  reader.readAsText(file);
+});
+
+render();
+</script>
+</body>
+</html>

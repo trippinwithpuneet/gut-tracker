@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # Planted-signal recovery and false-positive control for the analysis engine.
+      - name: Test
+        run: npm test
+
+      # Applies every migration to an in-process Postgres and asserts RLS is on
+      # for every public table. No Docker, no Supabase project needed.
+      - name: Verify migrations
+        run: npm run db:check
+
+      # Catches drift between src/lib/library.ts and the generated seed migration.
+      - name: Check seed is in sync with the library
+        run: |
+          npm run db:gen-seed
+          if ! git diff --quiet -- supabase/migrations; then
+            echo "The seed migration is out of date. Run 'npm run db:gen-seed' and commit the result."
+            git diff -- supabase/migrations
+            exit 1
+          fi
+
+      - name: Build
+        run: npm run build

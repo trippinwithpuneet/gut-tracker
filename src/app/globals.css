@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+
+/*
+  Fast Log design system — dark by design, not by preference.
+  This app is used at night, one-handed, usually right after a meal. The palette
+  commits to a single dark look rather than shipping a half-considered light mode.
+
+  Severity uses a green-to-orange ramp rather than green-to-red: red on a dark
+  surface at 5/5 reads as an error state, and a bad gut day is not an error.
+*/
+@theme {
+  --color-bg: #0e1211;
+  --color-surface: #161c19;
+  --color-surface-2: #1e2622;
+  --color-surface-3: #273029;
+  --color-line: #2e3833;
+  --color-line-soft: #232b27;
+
+  --color-ink: #edf2ee;
+  --color-muted: #93a29b;
+  --color-faint: #68766f;
+
+  --color-lime: #9fe870;
+  --color-lime-ink: #12331a;
+  --color-lime-dim: #5c7a45;
+
+  --color-hot: #ff7a5c;
+  --color-warm: #ffc061;
+  --color-cool: #6fd8a0;
+
+  --color-sev-0: #3a443e;
+  --color-sev-1: #6fd8a0;
+  --color-sev-2: #b8de6c;
+  --color-sev-3: #ffc061;
+  --color-sev-4: #ff9a5c;
+  --color-sev-5: #ff7a5c;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 16px;
+  --radius-field: 12px;
+}
+
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  /* Room for the fixed bottom nav plus the home indicator. */
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  overscroll-behavior-y: none;
+}
+
+/* Thumbs, not cursors: never shrink a tap target below the 44px guideline. */
+button,
+[role='button'] {
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-lime);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* iOS zooms the page when a focused input is under 16px. */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+::placeholder {
+  color: var(--color-faint);
+}
+
+/* Horizontal chip rails scroll without a visible bar. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

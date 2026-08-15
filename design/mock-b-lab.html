@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup B — Lab Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F5F3; --panel:#FFFFFF; --ink:#15201D; --muted:#6B7873; --faint:#98A39E;
+    --line:#E2E6E1; --line2:#D0D6CF;
+    --teal:#0F5C52; --teal-soft:#E3EFEC;
+    --hot:#A8362A; --hot-soft:#F7E7E4; --cool:#2F6B45; --cool-soft:#E3EFE6; --warm:#B4722A;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#E9EBE7;color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.5;padding:28px 20px 60px;-webkit-font-smoothing:antialiased}
+  .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+  .lede{max-width:900px;margin:0 auto 26px}
+  .lede .tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);background:var(--teal-soft);padding:5px 10px;border-radius:5px}
+  .lede h1{font-size:30px;margin:10px 0 6px;letter-spacing:-.02em}
+  .lede p{color:var(--muted);font-size:14.5px;max-width:62ch}
+
+  .board{display:flex;gap:24px;justify-content:center;align-items:flex-start;flex-wrap:wrap;max-width:900px;margin:0 auto}
+  .screen{width:400px;background:var(--bg);border:1px solid var(--line2);border-radius:14px;padding:0 0 22px;box-shadow:0 18px 44px rgba(21,32,29,.13);overflow:hidden}
+  .screen-label{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 8px 4px}
+
+  .hd{background:var(--panel);border-bottom:1px solid var(--line);padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+  .hd .ttl{font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .hd .meta{font-size:11px;color:var(--faint);letter-spacing:.02em;margin-top:2px}
+  .hd .av{width:28px;height:28px;border-radius:6px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:600}
+
+  .body{padding:14px 16px}
+  .sec{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px}
+  .sec > .h{padding:11px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .sec > .h .n{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
+  .sec > .b{padding:14px}
+
+  input[type=text]{width:100%;background:#FBFCFA;border:1px solid var(--line2);border-radius:7px;padding:10px 11px;font-family:inherit;font-size:14px;color:var(--ink)}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .chip{font-size:11.5px;font-weight:500;border:1px solid var(--line2);background:#FBFCFA;border-radius:6px;padding:5px 9px;cursor:pointer}
+  .chip.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+  .chip.more{border-style:dashed;color:var(--faint)}
+  .fieldrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
+  .fieldrow .f{border:1px solid var(--line2);background:#FBFCFA;border-radius:7px;padding:7px 9px;cursor:pointer}
+  .fieldrow .f .k{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .fieldrow .f .v{font-size:12.5px;font-weight:600;margin-top:1px}
+  .btn{background:var(--ink);color:#fff;border:none;border-radius:8px;padding:11px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:12px}
+
+  table{width:100%;border-collapse:collapse}
+  td,th{text-align:left;padding:8px 14px;font-size:12.5px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  th{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding-top:10px;padding-bottom:8px;background:#FAFBF9}
+  td.t{font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:11.5px;width:52px}
+  td.ev{font-weight:500}
+  td.ev .sub{font-size:11px;color:var(--faint);margin-top:2px}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:1px}
+  .num{font-family:'IBM Plex Mono',monospace;font-weight:600;text-align:right;width:38px}
+
+  /* insights */
+  .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+  .kpi .k{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:11px 12px}
+  .kpi .k .lab{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+  .kpi .k .val{font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:600;margin-top:3px;letter-spacing:-.02em}
+  .kpi .k .val small{font-size:11px;color:var(--faint);font-weight:400}
+
+  .selrow{display:flex;gap:5px;margin-bottom:12px;overflow:auto;padding-bottom:2px}
+  .sel{white-space:nowrap;font-size:12px;font-weight:500;background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding:6px 11px;cursor:pointer;color:var(--muted)}
+  .sel.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .fr{padding:12px 14px;border-bottom:1px solid var(--line)}
+  .fr:last-child{border-bottom:none}
+  .fr .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .fr .nm{font-size:13.5px;font-weight:600}
+  .fr .d{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600}
+  .d.up{color:var(--hot)} .d.dn{color:var(--cool)} .d.nil{color:var(--faint)}
+  .ci{position:relative;height:22px;margin-top:9px}
+  .ci .axis{position:absolute;left:0;right:0;top:10px;height:1px;background:var(--line2)}
+  .ci .zero{position:absolute;left:34%;top:0;bottom:0;width:1px;background:var(--line2)}
+  .ci .zlab{position:absolute;left:34%;top:14px;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:var(--faint)}
+  .ci .bar{position:absolute;top:7px;height:7px;border-radius:4px}
+  .ci .whisk{position:absolute;top:9px;height:3px;border-radius:2px;opacity:.28}
+  .stats{display:flex;gap:12px;margin-top:11px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--faint);letter-spacing:.02em;flex-wrap:wrap}
+  .stats b{color:var(--muted);font-weight:600}
+  .flag{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;border-radius:4px;padding:2.5px 6px}
+  .flag.s{background:var(--hot-soft);color:var(--hot)}
+  .flag.p{background:#F8EEDD;color:var(--warm)}
+  .flag.n{background:#EDEFEC;color:var(--faint)}
+  .flag.g{background:var(--cool-soft);color:var(--cool)}
+
+  .callout{border:1px solid var(--line2);border-left:3px solid var(--warm);background:#FDFAF4;border-radius:0 var(--radius) var(--radius) 0;padding:11px 13px;font-size:12px;line-height:1.55;color:var(--muted);margin-bottom:12px}
+  .callout b{color:var(--ink);font-weight:600}
+  .proto{background:var(--ink);color:#fff;border-radius:var(--radius);padding:14px}
+  .proto .n{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;opacity:.55}
+  .proto h3{font-size:14.5px;margin:6px 0 5px;font-weight:600}
+  .proto p{font-size:12px;opacity:.72;line-height:1.55}
+  .proto .steps{font-family:'IBM Plex Mono',monospace;font-size:11px;opacity:.8;margin-top:9px;line-height:1.8}
+  .proto button{margin-top:11px;width:100%;background:#fff;color:var(--ink);border:none;border-radius:7px;padding:10px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  .foot{font-size:10.5px;color:var(--faint);text-align:center;margin-top:14px;line-height:1.6;padding:0 16px}
+</style>
+</head>
+<body>
+
+<div class="lede">
+  <span class="tag">Direction B</span>
+  <h1>The Lab Notebook</h1>
+  <p>Instrument, not diary. Monospaced numbers, effect bars with uncertainty whiskers, sample sizes and p-values shown rather than hidden. The argument here is credibility: a tool making claims about your body should show its working. Denser and cooler than A, and the one that best justifies the statistics under the hood.</p>
+</div>
+
+<div class="board">
+
+  <div>
+    <div class="screen-label">Log</div>
+    <div class="screen">
+      <div class="hd">
+        <div>
+          <div class="ttl">15 Aug 2026</div>
+          <div class="meta mono">DAY 34 · 3 MEALS · 2 SYMPTOMS</div>
+        </div>
+        <div class="av">PJ</div>
+      </div>
+
+      <div class="body">
+        <div class="sec">
+          <div class="h"><span class="n">New entry</span><span class="n" style="color:var(--teal)">Meal / Symptom</span></div>
+          <div class="b">
+            <input type="text" value="Chicken biryani from Paradise">
+            <div class="chips">
+              <span class="chip on">alliums</span>
+              <span class="chip on">dairy</span>
+              <span class="chip on">fried oil</span>
+              <span class="chip">eggs</span>
+              <span class="chip">gluten</span>
+              <span class="chip">legumes</span>
+              <span class="chip">spicy</span>
+              <span class="chip more">+22</span>
+            </div>
+            <div class="fieldrow">
+              <div class="f"><div class="k">Time</div><div class="v mono">20:40</div></div>
+              <div class="f"><div class="k">Slot</div><div class="v">Dinner</div></div>
+              <div class="f"><div class="k">Source</div><div class="v">Outside</div></div>
+            </div>
+            <button class="btn">Record</button>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="h"><span class="n">Today's record</span><span class="n">15 Aug</span></div>
+          <table>
+            <tr><th>Time</th><th>Entry</th><th style="text-align:right">Sev</th></tr>
+            <tr>
+              <td class="t">08:15</td>
+              <td class="ev"><span class="dot" style="background:var(--teal)"></span>Poha, filter coffee<div class="sub">alliums · caffeine</div></td>
+              <td class="num" style="color:var(--faint)">—</td>
+            </tr>
+            <tr>
+              <td class="t">11:30</td>
+              <td class="ev"><span class="dot" style="background:var(--warm)"></span>Bloating</td>
+              <td class="num" style="color:#7A9E4E">2</td>
+            </tr>
+            <tr>
+              <td class="t">13:40</td>
+              <td class="ev"><span class="dot" style="background:var(--teal)"></span>Dal, rice, curd, bhindi<div class="sub">legumes · dairy</div></td>
+              <td class="num" style="color:var(--faint)">—</td>
+            </tr>
+            <tr>
+              <td class="t">17:05</td>
+              <td class="ev"><span class="dot" style="background:var(--warm)"></span>Foul-smelling gas</td>
+              <td class="num" style="color:var(--hot)">4</td>
+            </tr>
+            <tr>
+              <td class="t">20:40</td>
+              <td class="ev"><span class="dot" style="background:var(--teal)"></span>Chicken biryani<div class="sub">outside · alliums · dairy · fried oil</div></td>
+              <td class="num" style="color:var(--faint)">—</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="foot">Time is optional — entries without it are analysed at day resolution.</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="screen-label">Insights</div>
+    <div class="screen">
+      <div class="hd">
+        <div>
+          <div class="ttl">Analysis</div>
+          <div class="meta mono">34 DAYS · 82 MEALS · 51 SYMPTOM ENTRIES</div>
+        </div>
+        <div class="av">PJ</div>
+      </div>
+
+      <div class="body">
+        <div class="selrow">
+          <span class="sel on">Foul-smelling gas</span>
+          <span class="sel">Constipation</span>
+          <span class="sel">Bloating</span>
+        </div>
+
+        <div class="kpi">
+          <div class="k"><div class="lab">Baseline</div><div class="val">2.3<small>/5</small></div></div>
+          <div class="k"><div class="lab">Tested</div><div class="val">14<small> tags</small></div></div>
+          <div class="k"><div class="lab">Signals</div><div class="val" style="color:var(--hot)">2</div></div>
+        </div>
+
+        <div class="callout"><b>Onion and garlic co-occur in 80% of meals.</b> Their individual effects cannot be separated from this data. Both are reported together until a separating meal exists.</div>
+
+        <div class="sec">
+          <div class="h"><span class="n">Effect on severity</span><span class="n">vs. baseline</span></div>
+
+          <div class="fr">
+            <div class="top"><span class="nm">Eggs</span><span class="d up">+1.8</span></div>
+            <div class="ci">
+              <span class="axis"></span><span class="zero"></span>
+              <span class="whisk" style="left:34%;width:38%;background:var(--hot)"></span>
+              <span class="bar" style="left:34%;width:27%;background:var(--hot)"></span>
+              <span class="zlab">0</span>
+            </div>
+            <div class="stats"><span class="flag s">Strong</span><span>n=<b>11</b>/<b>23</b></span><span>p=<b>0.004</b></span><span>q=<b>0.03</b></span></div>
+          </div>
+
+          <div class="fr">
+            <div class="top"><span class="nm">Dairy</span><span class="d up">+1.2</span></div>
+            <div class="ci">
+              <span class="axis"></span><span class="zero"></span>
+              <span class="whisk" style="left:34%;width:30%;background:var(--warm)"></span>
+              <span class="bar" style="left:34%;width:18%;background:var(--warm)"></span>
+              <span class="zlab">0</span>
+            </div>
+            <div class="stats"><span class="flag p">Possible</span><span>n=<b>19</b>/<b>15</b></span><span>p=<b>0.031</b></span><span>q=<b>0.11</b></span></div>
+          </div>
+
+          <div class="fr">
+            <div class="top"><span class="nm">Alliums <span style="font-weight:400;color:var(--faint);font-size:11px">· entangled</span></span><span class="d up">+0.9</span></div>
+            <div class="ci">
+              <span class="axis"></span><span class="zero"></span>
+              <span class="whisk" style="left:34%;width:31%;background:var(--warm)"></span>
+              <span class="bar" style="left:34%;width:13%;background:var(--warm)"></span>
+              <span class="zlab">0</span>
+            </div>
+            <div class="stats"><span class="flag p">Possible</span><span>n=<b>28</b>/<b>6</b></span><span>p=<b>0.088</b></span><span>q=<b>0.21</b></span></div>
+          </div>
+
+          <div class="fr">
+            <div class="top"><span class="nm">Cruciferous</span><span class="d nil">+0.4</span></div>
+            <div class="ci">
+              <span class="axis"></span><span class="zero"></span>
+              <span class="whisk" style="left:20%;width:40%;background:var(--faint)"></span>
+              <span class="bar" style="left:34%;width:6%;background:#C3CBC5"></span>
+              <span class="zlab">0</span>
+            </div>
+            <div class="stats"><span class="flag n">No signal</span><span>n=<b>7</b>/<b>27</b></span><span>p=<b>0.41</b></span></div>
+          </div>
+
+          <div class="fr">
+            <div class="top"><span class="nm">Rice</span><span class="d dn">−0.7</span></div>
+            <div class="ci">
+              <span class="axis"></span><span class="zero"></span>
+              <span class="whisk" style="left:14%;width:26%;background:var(--cool)"></span>
+              <span class="bar" style="left:23%;width:11%;background:var(--cool)"></span>
+              <span class="zlab">0</span>
+            </div>
+            <div class="stats"><span class="flag g">Looks safe</span><span>n=<b>27</b>/<b>7</b></span><span>p=<b>0.04</b></span></div>
+          </div>
+
+          <div class="fr" style="text-align:center;color:var(--faint);font-size:11.5px;padding:12px">
+            9 more tags below the reporting threshold — <span style="color:var(--teal);font-weight:600">show all</span>
+          </div>
+        </div>
+
+        <div class="proto">
+          <div class="n">Protocol · suggested</div>
+          <h3>Separate garlic from onion</h3>
+          <p>Your strongest confound. Three separating meals should resolve it.</p>
+          <div class="steps">
+            01 · garlic, no onion &nbsp;→&nbsp; ×3 days<br>
+            02 · log gas for 36h after each<br>
+            03 · verdict at n=3
+          </div>
+          <button>Run this protocol</button>
+        </div>
+
+        <div class="foot">Associations computed from your log by permutation test with<br>Benjamini–Hochberg correction. Not a diagnosis.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
