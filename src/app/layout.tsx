@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { BottomNav } from '@/components/bottom-nav';
+import { ServiceWorkerRegistrar } from '@/components/service-worker';
 import { StoreProvider } from '@/lib/store/provider';
 import './globals.css';
 
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <div className="mx-auto w-full max-w-md px-4 pt-5">{children}</div>
           <BottomNav />
         </StoreProvider>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
