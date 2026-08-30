@@ -30,7 +30,15 @@ Each symptom is analysed separately, because the food behind your bloating may n
 
 Sign-in is optional. Open the app and start logging; everything is stored in your browser until you decide otherwise. Signing in with Google syncs across devices and offers to carry your local data across.
 
-The hosted instance above has no Supabase project attached yet, so it runs local-only: your data stays in that browser and there is no sign-in button. Everything else works. To get sync, run your own instance — see [`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md).
+That link is one person's instance, and its Google sign-in is restricted to accounts on its test list — so treat it as a demo of the app, not somewhere to keep your own log. Without an account it is fully functional: local-only, everything in your browser, nothing transmitted. For accounts and sync that are actually yours, run your own instance — see [`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md).
+
+### On your phone
+
+Add it to your home screen. It is a progressive web app, so it launches without browser chrome and opens offline — logging has to happen within seconds of eating, and "open browser, find tab, wait" loses to forgetting.
+
+Offline is not a degraded mode. Signed out, everything is local anyway. Signed in, writes go to IndexedDB first and drain to the server when a connection returns, so logging a meal in a restaurant basement keeps the meal.
+
+Reminders are the one feature that needs an account: a notification has to be sent by a server, and local-only mode deliberately has none. If you self-host, [`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md) covers turning them on.
 
 ## Run it yourself
 
@@ -80,7 +88,8 @@ npm run db:gen-seed # regenerate the library seed from src/lib/library.ts
 Health data, treated as such:
 
 - Local mode transmits nothing. Ever.
-- Signed in, every table is protected by row-level security keyed to your user id. The service-role key is not used anywhere in this codebase.
+- Signed in, every table is protected by row-level security keyed to your user id. The service-role key never reaches the browser; the only thing that uses it is the optional reminder function, which runs server-side.
+- Reminder notifications carry no meal or symptom text. They render on a lock screen, in public, and nothing you logged belongs there.
 - Export everything to JSON at any time. Delete everything from the You tab.
 - No analytics, no tracking, no third-party scripts.
 
