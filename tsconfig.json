@@ -30,5 +30,8 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  // supabase/functions is Deno, not Next: it imports via jsr:/npm: specifiers and
+  // relies on Deno globals, neither of which this compiler can resolve. It is
+  // typechecked by `deno check` at deploy time instead.
+  "exclude": ["node_modules", "supabase/functions"]
 }

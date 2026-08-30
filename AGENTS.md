@@ -29,11 +29,19 @@ Anyone can average symptom scores by food. This app's entire value is that it do
 
 ```
 src/lib/analysis/    Pure TS engine. No React, no Supabase imports. Fully unit-tested.
-src/lib/store/       DataStore interface + LocalStore (IndexedDB) and CloudStore (Supabase).
+src/lib/store/       DataStore interface, LocalStore (IndexedDB), CloudStore (Supabase),
+                     and ResilientStore, which wraps the cloud in a mirror + outbox so
+                     a dead connection cannot lose a write.
+src/lib/push/        Reminder subscriptions and preferences. Signed-in only, and
+                     deliberately outside DataStore — see the note in subscribe.ts.
 src/lib/library.ts   Curated symptoms and food tags — the single source of truth.
 src/lib/uuid.ts      Deterministic UUIDv5 so local and cloud ids match.
 src/app/             Routes: / (log), /insights, /tests, /you, /onboarding, /privacy.
 supabase/migrations/ Schema + RLS. The seed migration is GENERATED — do not hand-edit.
+supabase/functions/  Edge Functions. send-reminders is the only server-side code, and
+                     the only place the service-role key is used.
+supabase/cron/       One-time scheduling SQL. NOT a migration: db:check replays
+                     migrations into PGlite, which has no pg_cron or pg_net.
 legacy/              The original single-file app. Still works. Its exports still import.
 ```
 
@@ -41,7 +49,8 @@ legacy/              The original single-file app. Still works. Its exports stil
 
 - **The library seed is generated.** Edit `src/lib/library.ts`, then run `npm run db:gen-seed`. Never edit `supabase/migrations/*_seed_libraries.sql` by hand.
 - **Slugs are permanent identity.** Row ids are UUIDv5 hashes of the slug, so renaming a slug orphans every entry tagged with it. Labels and descriptions are free to change.
-- **Local mode is a first-class path, not a fallback.** Every feature works signed out. `isSupabaseConfigured` being false is a supported state — never assume a Supabase client exists.
+- **Local mode is a first-class path, not a fallback.** Every feature works signed out, with exactly one documented exception: daily reminders. `isSupabaseConfigured` being false is a supported state — never assume a Supabase client exists.
+- **Reminders are the exception, and the only one.** A push notification has to be sent by a server, and local mode has none, so reminders require an account. The UI says why rather than offering a switch that cannot work (`src/components/reminders-card.tsx`). Do not use this as precedent: any other feature that "needs" an account is a design mistake, not a second exception.
 - **Both stores must stay interchangeable.** Anything added to the `DataStore` interface needs a real implementation in `local.ts` *and* `cloud.ts`, or sign-in migration silently drops data.
 - **Every cloud write stamps `user_id`.** That is also what RLS checks, so getting it wrong fails closed rather than leaking across accounts.
 - **Dates are local-calendar, never UTC.** Use the helpers in `src/lib/dates.ts`. `toISOString().slice(0,10)` files an 11pm meal in Asia under the next day and corrupts the exposure windows.

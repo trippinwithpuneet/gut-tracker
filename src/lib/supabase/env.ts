@@ -3,7 +3,9 @@
  *
  * Both variables are safe to expose — the anon/publishable key only grants what
  * row-level security allows, which for this app is "your own rows and the curated
- * libraries". The service-role key is never used anywhere in this codebase.
+ * libraries". The service-role key never appears in the browser bundle; the one
+ * place it is used is the send-reminders Edge Function, which runs on the server
+ * and reads across users precisely because RLS stops the client from doing so.
  *
  * The app is designed to run without these set: no configuration means no cloud
  * backend, and the UI stays in local-only mode instead of crashing. That is what

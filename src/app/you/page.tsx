@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { RemindersCard } from '@/components/reminders-card';
 import { Button, Card, CardLabel, Spinner, Toast, cx } from '@/components/ui';
 import { importLegacyExport, isLegacyExport } from '@/lib/legacy-import';
 import { useStore } from '@/lib/store/provider';
@@ -204,6 +205,8 @@ export default function YouPage() {
           </>
         )}
       </Card>
+
+      <RemindersCard />
 
       <Card className="mb-4">
         <CardLabel>Your log</CardLabel>

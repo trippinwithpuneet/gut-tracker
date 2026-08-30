@@ -92,6 +92,72 @@ Worth doing once, because a mistake here is silent:
 3. Sign in from a second Google account. It must see **none** of the first account's data. If it does, row-level security is not applied — stop and re-run `supabase db push`.
 4. Export from the You tab and confirm the JSON contains your entries.
 
+## Optional — daily reminders
+
+One notification a day, at an hour you pick, in your own timezone. Skip this and
+everything else still works; the reminder switch simply stays hidden.
+
+Reminders need an account, and that is the one feature in the app that does. A
+notification has to be *sent* by something, and local-only mode has no server by
+design — which is the whole point of local-only mode.
+
+### 1. Generate a VAPID key pair
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+Two keys come out. The public one identifies your server to the browser's push
+service and is meant to be public. The private one signs pushes and must never reach
+a browser.
+
+### 2. Put each key where it belongs
+
+- Public key → `NEXT_PUBLIC_VAPID_PUBLIC_KEY` in your hosting environment variables.
+- Private key → a Supabase Edge Function secret, never an env var in the web app:
+
+```bash
+supabase secrets set VAPID_PRIVATE_KEY=<private key>
+supabase secrets set VAPID_PUBLIC_KEY=<public key>
+supabase secrets set VAPID_SUBJECT=mailto:you@example.com
+```
+
+`VAPID_SUBJECT` is a contact address push services require from senders (RFC 8292).
+
+### 3. Deploy the function
+
+```bash
+supabase functions deploy send-reminders
+```
+
+Check it before trusting a schedule to it:
+
+```bash
+supabase functions invoke send-reminders --method POST
+```
+
+It answers with how many users were due, how many notifications went out, and how
+many dead subscriptions it pruned. With reminders switched on for the current hour,
+`sent` should be at least 1.
+
+### 4. Schedule it
+
+Open `supabase/cron/schedule.sql`, replace `<PROJECT_REF>`, store the service-role
+key in Vault as the file describes, and run it once in the SQL editor.
+
+It runs hourly, not daily, because reminder times are per-user and per-timezone —
+21:00 is a different instant in Mumbai and Lisbon. The function works out who is
+actually due.
+
+### Notes
+
+- **On iPhone, add the app to your home screen first.** Safari only allows push for
+  an installed web app, never a tab. The reminder card says so when it detects this.
+- Reminders are per-device. Switching them on for your phone does not switch them on
+  for your laptop.
+- A free Supabase project pauses after a week of inactivity, which stops cron with
+  it. Daily use keeps it awake.
+
 ## Costs
 
 Supabase free tier and Vercel hobby cover a personal instance comfortably. A row of logging is a few hundred bytes; a year of daily use is well under a megabyte.
