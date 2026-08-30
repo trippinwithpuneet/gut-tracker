@@ -26,7 +26,11 @@ Each symptom is analysed separately, because the food behind your bloating may n
 
 ## Try it
 
+**[gut-tracker-chi.vercel.app](https://gut-tracker-chi.vercel.app/)**
+
 Sign-in is optional. Open the app and start logging; everything is stored in your browser until you decide otherwise. Signing in with Google syncs across devices and offers to carry your local data across.
+
+The hosted instance above has no Supabase project attached yet, so it runs local-only: your data stays in that browser and there is no sign-in button. Everything else works. To get sync, run your own instance — see [`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md).
 
 ## Run it yourself
 
