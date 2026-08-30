@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DayFeed } from '@/components/day-feed';
 import { MealComposer } from '@/components/meal-composer';
@@ -27,6 +27,9 @@ export default function LogPage() {
   const [trackedSymptomIds, setTrackedSymptomIds] = useState<string[]>([]);
   const [composer, setComposer] = useState<Composer>(null);
   const [observedDays, setObservedDays] = useState<number | null>(null);
+  // Once the threshold is passed the card is gone for good, so stop paying for the
+  // count on every save — in cloud mode it is two full-table reads.
+  const countSettledRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -78,7 +81,7 @@ export default function LogPage() {
   // uses to decide whether results are worth reading. Counted over the whole log
   // rather than a recent window so the number shown matches the number applied.
   useEffect(() => {
-    if (!ready || !store) return;
+    if (!ready || !store || countSettledRef.current) return;
     let cancelled = false;
     void (async () => {
       const [allMeals, allLogs] = await Promise.all([
@@ -90,6 +93,7 @@ export default function LogPage() {
         ...allMeals.map((m) => m.occurredOn),
         ...allLogs.map((l) => l.occurredOn),
       ]);
+      if (days.size >= MIN_USEFUL_DAYS) countSettledRef.current = true;
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setObservedDays(days.size);
     })();
