@@ -36,6 +36,16 @@ export const DEFAULT_OPTIONS: AnalysisOptions = {
   entanglementThreshold: 0.7,
 };
 
+/**
+ * Days of logging below which results are not worth reading.
+ *
+ * It is not a statistical threshold — the permutation test and the correction decide
+ * what is real. It is the point where a verdict stops being dominated by whichever
+ * handful of days happened to get logged, and it is shared with the UI so the
+ * progress a user is shown is the same number the engine actually applies.
+ */
+export const MIN_USEFUL_DAYS = 10;
+
 /** Same day, or the day after — gut reactions are frequently delayed. */
 export type Lag = 0 | 1;
 

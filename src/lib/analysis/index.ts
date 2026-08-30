@@ -29,6 +29,7 @@ import {
 import { benjaminiHochberg, hashString, mean, permutationTest } from './stats';
 import {
   DEFAULT_OPTIONS,
+  MIN_USEFUL_DAYS,
   type AnalysisInput,
   type AnalysisOptions,
   type AnalysisReport,
@@ -320,8 +321,10 @@ function assessQuality(
   const notes: string[] = [];
   if (days.length === 0) {
     notes.push('Log a few days to get started.');
-  } else if (days.length < 10) {
-    notes.push(`Log ${10 - days.length} more days before the first results mean much.`);
+  } else if (days.length < MIN_USEFUL_DAYS) {
+    notes.push(
+      `Log ${MIN_USEFUL_DAYS - days.length} more days before the first results mean much.`
+    );
   }
 
   if (input.symptomLogs.length === 0 && days.length > 0) {

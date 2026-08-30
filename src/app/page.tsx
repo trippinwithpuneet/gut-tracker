@@ -6,6 +6,7 @@ import { DayFeed } from '@/components/day-feed';
 import { MealComposer } from '@/components/meal-composer';
 import { SymptomComposer } from '@/components/symptom-composer';
 import { Button, Card, CardLabel, PageHeader, Spinner, Toast, cx } from '@/components/ui';
+import { MIN_USEFUL_DAYS } from '@/lib/analysis';
 import { addDays, daysBetween, friendlyDay, fromDayString, today } from '@/lib/dates';
 import { useStore } from '@/lib/store/provider';
 import type { Meal, SymptomLog } from '@/lib/types';
@@ -25,6 +26,7 @@ export default function LogPage() {
   const [trackedTagIds, setTrackedTagIds] = useState<string[]>([]);
   const [trackedSymptomIds, setTrackedSymptomIds] = useState<string[]>([]);
   const [composer, setComposer] = useState<Composer>(null);
+  const [observedDays, setObservedDays] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -71,6 +73,30 @@ export default function LogPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (ready) void load();
   }, [ready, load]);
+
+  // How many distinct days have anything logged — the same count the analysis engine
+  // uses to decide whether results are worth reading. Counted over the whole log
+  // rather than a recent window so the number shown matches the number applied.
+  useEffect(() => {
+    if (!ready || !store) return;
+    let cancelled = false;
+    void (async () => {
+      const [allMeals, allLogs] = await Promise.all([
+        store.listMeals(),
+        store.listSymptomLogs(),
+      ]);
+      if (cancelled) return;
+      const days = new Set<string>([
+        ...allMeals.map((m) => m.occurredOn),
+        ...allLogs.map((l) => l.occurredOn),
+      ]);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setObservedDays(days.size);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, store, meals.length, logs.length]);
 
   /**
    * Quick-pick order: the tags you chose to track, then whatever you actually reach
@@ -188,6 +214,43 @@ export default function LogPage() {
           />
         ))}
       </div>
+
+      {observedDays !== null && observedDays < MIN_USEFUL_DAYS && (
+        <Card className="mb-4">
+          <CardLabel>Working towards your first verdict</CardLabel>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold tabular-nums">{observedDays}</span>
+            <span className="text-[13px] text-faint">
+              of {MIN_USEFUL_DAYS} days logged
+            </span>
+          </div>
+          <div
+            className="mt-2.5 flex gap-1"
+            role="progressbar"
+            aria-valuenow={observedDays}
+            aria-valuemin={0}
+            aria-valuemax={MIN_USEFUL_DAYS}
+            aria-label="Days logged towards a first result"
+          >
+            {Array.from({ length: MIN_USEFUL_DAYS }, (_, i) => (
+              <span
+                key={i}
+                className={cx(
+                  'h-1.5 flex-1 rounded-full',
+                  i < observedDays ? 'bg-lime' : 'bg-surface-3'
+                )}
+              />
+            ))}
+          </div>
+          <p className="mt-2.5 text-[12.5px] leading-relaxed text-muted">
+            {observedDays === 0
+              ? 'Insights stay empty until there is something to compare. A day counts once it has a meal or a symptom on it.'
+              : `${MIN_USEFUL_DAYS - observedDays} more ${
+                  MIN_USEFUL_DAYS - observedDays === 1 ? 'day' : 'days'
+                } before results mean much. Days you skip are ignored, not counted as good ones.`}
+          </p>
+        </Card>
+      )}
 
       {composer === null ? (
         <div className="mb-4 grid grid-cols-2 gap-2.5">
