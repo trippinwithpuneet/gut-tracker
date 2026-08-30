@@ -24,6 +24,8 @@ export default function YouPage() {
     reloadLibrary,
     symptomTypes,
     foodTags,
+    sync,
+    flushSync,
   } = useStore();
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -156,8 +158,25 @@ export default function YouPage() {
           <>
             <div className="text-sm font-semibold">{user.email}</div>
             <div className="mt-1 text-[12.5px] text-faint">
-              Synced to your account. Available on any device you sign in on.
+              {sync.pending > 0
+                ? `${sync.pending} ${sync.pending === 1 ? 'change is' : 'changes are'} saved on this device and waiting to reach your account.`
+                : 'Synced to your account. Available on any device you sign in on.'}
             </div>
+
+            {sync.pending > 0 && (
+              <Button variant="secondary" full className="mt-3" onClick={() => void flushSync()}>
+                Try syncing now
+              </Button>
+            )}
+
+            {sync.abandoned > 0 && (
+              <div className="mt-2 text-[12px] leading-relaxed text-hot">
+                {sync.abandoned} {sync.abandoned === 1 ? 'change' : 'changes'} could not be saved
+                to your account after several tries. {"They're"} still on this device — export a
+                backup before clearing site data.
+              </div>
+            )}
+
             <Button variant="secondary" full className="mt-3" onClick={signOut}>
               Sign out
             </Button>
@@ -208,6 +227,8 @@ export default function YouPage() {
         )}
         <div className="mt-3 text-[12px] text-faint">
           Storage: {mode === 'cloud' ? 'your account' : 'this device'}
+          {mode === 'cloud' && sync.pending > 0 && ' · syncing'}
+          {mode === 'cloud' && sync.pending === 0 && sync.offline && ' · offline'}
         </div>
       </Card>
 

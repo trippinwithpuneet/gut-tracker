@@ -24,7 +24,13 @@ import { getSupabaseBrowserClient } from '../supabase/client';
 import { isSupabaseConfigured } from '../supabase/env';
 import type { FoodTag, ImportResult, SymptomType } from '../types';
 import { CloudStore } from './cloud';
-import { LocalStore, localStoreHasData } from './local';
+import { LocalStore, deleteLocalDatabase, localStoreHasData } from './local';
+import {
+  IDLE_SYNC_STATE,
+  ResilientStore,
+  mirrorDatabaseName,
+  type SyncState,
+} from './resilient';
 import type { DataStore } from './types';
 
 export interface StoreContextValue {
@@ -47,6 +53,11 @@ export interface StoreContextValue {
   pendingLocalMigration: boolean;
   migrateLocalData: () => Promise<ImportResult | null>;
   dismissMigration: () => void;
+
+  /** Queue depth and connectivity while signed in. Always idle in local mode. */
+  sync: SyncState;
+  /** Ask the outbox to drain now. Safe to call when there is nothing queued. */
+  flushSync: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -65,8 +76,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [foodTags, setFoodTags] = useState<FoodTag[]>(CURATED_FOOD_TAGS);
   const [pendingLocalMigration, setPendingLocalMigration] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [sync, setSync] = useState<SyncState>(IDLE_SYNC_STATE);
+
+  // Held separately from `store` so the reconnect listener can drain the queue
+  // without re-subscribing every time the store object changes identity.
+  const resilientRef = useRef<ResilientStore | null>(null);
 
   // LocalStore touches IndexedDB, so it is only ever constructed in the browser.
+  const userRef = useRef<User | null>(null);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
   const localRef = useRef<LocalStore | null>(null);
   const getLocal = useCallback(() => {
     if (!localRef.current) localRef.current = new LocalStore();
@@ -88,8 +109,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const supabase = getSupabaseBrowserClient();
 
     async function activate(nextUser: User | null) {
-      const nextStore: DataStore =
-        nextUser && supabase ? new CloudStore(supabase, nextUser.id) : getLocal();
+      let nextStore: DataStore;
+      if (nextUser && supabase) {
+        // The cloud store is wrapped rather than used directly: writes land in
+        // IndexedDB and a queue first, so a dead connection costs a spinner rather
+        // than the meal the user just typed.
+        const resilient = new ResilientStore(
+          new CloudStore(supabase, nextUser.id),
+          nextUser.id,
+          setSync
+        );
+        resilientRef.current = resilient;
+        nextStore = resilient;
+      } else {
+        resilientRef.current = null;
+        setSync(IDLE_SYNC_STATE);
+        nextStore = getLocal();
+      }
 
       try {
         await loadLibraryFrom(nextStore);
@@ -99,6 +135,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         console.error('Falling back to local storage:', err);
         setAuthError(err instanceof Error ? err.message : 'Could not reach the server');
         if (cancelled) return;
+        resilientRef.current = null;
         const fallback = getLocal();
         await loadLibraryFrom(fallback);
         setStore(fallback);
@@ -133,6 +170,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       sub.subscription.unsubscribe();
     };
   }, [getLocal, loadLibraryFrom]);
+
+  // Drain the queue when connectivity returns. `online` is not wholly trustworthy —
+  // it fires on captive portals too — but a drain that fails is harmless: entries
+  // stay queued and the next attempt tries again.
+  useEffect(() => {
+    const onOnline = () => void resilientRef.current?.flush();
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, []);
 
   // Surface an OAuth failure passed back on the query string by the callback route,
   // then strip it from the URL so a refresh doesn't resurrect a stale error. Reading
@@ -170,9 +216,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (error) setAuthError(error.message);
   }, []);
 
+  const flushSync = useCallback(async () => {
+    await resilientRef.current?.flush();
+  }, []);
+
   const signOut = useCallback(async () => {
+    // Push anything still queued before the session goes away, then take the mirror
+    // off the device so a signed-out browser is not left holding someone's symptom
+    // log. If writes could not be delivered the mirror is the only copy that has
+    // them, so it stays — losing data to tidy up would be the worse trade.
+    const resilient = resilientRef.current;
+    const user = userRef.current;
+    if (resilient && user) {
+      await resilient.flush();
+      const { pending } = await resilient.syncState();
+      if (pending === 0) await deleteLocalDatabase(mirrorDatabaseName(user.id));
+    }
+
     const supabase = getSupabaseBrowserClient();
     if (supabase) await supabase.auth.signOut();
+    resilientRef.current = null;
+    setSync(IDLE_SYNC_STATE);
     setPendingLocalMigration(false);
   }, []);
 
@@ -205,6 +269,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       pendingLocalMigration,
       migrateLocalData,
       dismissMigration,
+      sync,
+      flushSync,
     }),
     [
       ready,
@@ -219,6 +285,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       pendingLocalMigration,
       migrateLocalData,
       dismissMigration,
+      sync,
+      flushSync,
     ]
   );
 

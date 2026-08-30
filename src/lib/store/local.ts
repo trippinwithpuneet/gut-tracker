@@ -8,7 +8,7 @@
  * IndexedDB rather than localStorage because a year of per-meal logging is tens of
  * thousands of rows and localStorage is a synchronous 5MB string bucket.
  */
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { deleteDB, openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { CURATED_FOOD_TAGS, CURATED_SYMPTOM_TYPES } from '../library';
 import type {
   Challenge,
@@ -62,11 +62,15 @@ const USER_STORES = [
   'challenges',
 ] as const;
 
-let dbPromise: Promise<IDBPDatabase<GutDB>> | null = null;
+// Keyed by database name: the signed-out store uses `gut-tracker`, while a signed-in
+// session opens a second database as its offline mirror. Same schema, same code, so
+// the mirror cannot drift from the real thing.
+const dbPromises = new Map<string, Promise<IDBPDatabase<GutDB>>>();
 
-function db(): Promise<IDBPDatabase<GutDB>> {
-  if (!dbPromise) {
-    dbPromise = openDB<GutDB>(DB_NAME, DB_VERSION, {
+function db(name: string = DB_NAME): Promise<IDBPDatabase<GutDB>> {
+  let existing = dbPromises.get(name);
+  if (!existing) {
+    existing = openDB<GutDB>(name, DB_VERSION, {
       upgrade(database) {
         database.createObjectStore('meta');
         database.createObjectStore('customSymptomTypes', { keyPath: 'id' });
@@ -83,8 +87,19 @@ function db(): Promise<IDBPDatabase<GutDB>> {
         database.createObjectStore('challenges', { keyPath: 'id' });
       },
     });
+    dbPromises.set(name, existing);
   }
-  return dbPromise;
+  return existing;
+}
+
+/** Drops a mirror database entirely. Used when a user signs out. */
+export async function deleteLocalDatabase(name: string): Promise<void> {
+  const pending = dbPromises.get(name);
+  if (pending) {
+    (await pending).close();
+    dbPromises.delete(name);
+  }
+  await deleteDB(name);
 }
 
 const bySortOrder = <T extends { sortOrder: number; name: string }>(a: T, b: T) =>
@@ -107,13 +122,20 @@ const DEFAULT_PROFILE: Profile = {
 export class LocalStore implements DataStore {
   readonly kind = 'local' as const;
 
+  /**
+   * `name` selects the underlying IndexedDB database. It defaults to the shared
+   * signed-out database; ResilientStore passes a per-user name so a mirror can never
+   * be mistaken for, or collide with, the local-only log.
+   */
+  constructor(private readonly name: string = DB_NAME) {}
+
   async listSymptomTypes(): Promise<SymptomType[]> {
-    const custom = await (await db()).getAll('customSymptomTypes');
+    const custom = await (await db(this.name)).getAll('customSymptomTypes');
     return [...CURATED_SYMPTOM_TYPES, ...custom].sort(bySortOrder);
   }
 
   async listFoodTags(): Promise<FoodTag[]> {
-    const custom = await (await db()).getAll('customFoodTags');
+    const custom = await (await db(this.name)).getAll('customFoodTags');
     return [...CURATED_FOOD_TAGS, ...custom].sort(bySortOrder);
   }
 
@@ -129,7 +151,7 @@ export class LocalStore implements DataStore {
       isRedFlag: false,
       sortOrder: 1000,
     };
-    await (await db()).put('customSymptomTypes', row);
+    await (await db(this.name)).put('customSymptomTypes', row);
     return row;
   }
 
@@ -144,12 +166,12 @@ export class LocalStore implements DataStore {
       aliases: input.aliases ?? [],
       sortOrder: 1000,
     };
-    await (await db()).put('customFoodTags', row);
+    await (await db(this.name)).put('customFoodTags', row);
     return row;
   }
 
   async getProfile(): Promise<Profile> {
-    const stored = (await (await db()).get('meta', 'profile')) as Profile | undefined;
+    const stored = (await (await db(this.name)).get('meta', 'profile')) as Profile | undefined;
     return stored ?? DEFAULT_PROFILE;
   }
 
@@ -157,22 +179,22 @@ export class LocalStore implements DataStore {
     patch: Partial<Pick<Profile, 'displayName' | 'timezone' | 'onboardedAt'>>
   ): Promise<Profile> {
     const next = { ...(await this.getProfile()), ...patch };
-    await (await db()).put('meta', next, 'profile');
+    await (await db(this.name)).put('meta', next, 'profile');
     return next;
   }
 
   async listTrackedSymptoms(): Promise<TrackedSymptom[]> {
-    const rows = await (await db()).getAll('trackedSymptoms');
+    const rows = await (await db(this.name)).getAll('trackedSymptoms');
     return rows.sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
   async listTrackedTags(): Promise<TrackedTag[]> {
-    const rows = await (await db()).getAll('trackedTags');
+    const rows = await (await db(this.name)).getAll('trackedTags');
     return rows.sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
   async setTrackedSymptoms(symptomTypeIds: string[]): Promise<void> {
-    const tx = (await db()).transaction('trackedSymptoms', 'readwrite');
+    const tx = (await db(this.name)).transaction('trackedSymptoms', 'readwrite');
     await tx.store.clear();
     await Promise.all(
       symptomTypeIds.map((symptomTypeId, index) =>
@@ -183,7 +205,7 @@ export class LocalStore implements DataStore {
   }
 
   async setTrackedTags(tagIds: string[]): Promise<void> {
-    const tx = (await db()).transaction('trackedTags', 'readwrite');
+    const tx = (await db(this.name)).transaction('trackedTags', 'readwrite');
     await tx.store.clear();
     await Promise.all(
       tagIds.map((tagId, index) =>
@@ -194,62 +216,62 @@ export class LocalStore implements DataStore {
   }
 
   async listMeals(range?: DayRange): Promise<Meal[]> {
-    const rows = await (await db()).getAll('meals');
+    const rows = await (await db(this.name)).getAll('meals');
     return inRange(rows, range).sort(byRecency);
   }
 
   async saveMeal(input: MealInput): Promise<Meal> {
     const row: Meal = { ...input, id: input.id ?? uuidv4() };
-    await (await db()).put('meals', row);
+    await (await db(this.name)).put('meals', row);
     return row;
   }
 
   async deleteMeal(id: string): Promise<void> {
-    await (await db()).delete('meals', id);
+    await (await db(this.name)).delete('meals', id);
   }
 
   async listSymptomLogs(range?: DayRange): Promise<SymptomLog[]> {
-    const rows = await (await db()).getAll('symptomLogs');
+    const rows = await (await db(this.name)).getAll('symptomLogs');
     return inRange(rows, range).sort(byRecency);
   }
 
   async saveSymptomLog(input: SymptomLogInput): Promise<SymptomLog> {
     const row: SymptomLog = { ...input, id: input.id ?? uuidv4() };
-    await (await db()).put('symptomLogs', row);
+    await (await db(this.name)).put('symptomLogs', row);
     return row;
   }
 
   async deleteSymptomLog(id: string): Promise<void> {
-    await (await db()).delete('symptomLogs', id);
+    await (await db(this.name)).delete('symptomLogs', id);
   }
 
   async listDailyFactors(range?: DayRange): Promise<DailyFactors[]> {
-    const rows = await (await db()).getAll('dailyFactors');
+    const rows = await (await db(this.name)).getAll('dailyFactors');
     return inRange(rows, range).sort((a, b) => b.day.localeCompare(a.day));
   }
 
   async saveDailyFactors(input: DailyFactors): Promise<DailyFactors> {
-    await (await db()).put('dailyFactors', input);
+    await (await db(this.name)).put('dailyFactors', input);
     return input;
   }
 
   async listChallenges(): Promise<Challenge[]> {
-    const rows = await (await db()).getAll('challenges');
+    const rows = await (await db(this.name)).getAll('challenges');
     return rows.sort((a, b) => b.startedOn.localeCompare(a.startedOn));
   }
 
   async saveChallenge(input: ChallengeInput): Promise<Challenge> {
     const row: Challenge = { ...input, id: input.id ?? uuidv4() };
-    await (await db()).put('challenges', row);
+    await (await db(this.name)).put('challenges', row);
     return row;
   }
 
   async deleteChallenge(id: string): Promise<void> {
-    await (await db()).delete('challenges', id);
+    await (await db(this.name)).delete('challenges', id);
   }
 
   async exportAll(): Promise<Snapshot> {
-    const database = await db();
+    const database = await db(this.name);
     const [
       profile,
       customSymptomTypes,
@@ -295,7 +317,7 @@ export class LocalStore implements DataStore {
   async importAll(snapshot: Snapshot, mode: 'merge' | 'replace'): Promise<ImportResult> {
     if (mode === 'replace') await this.clearAll();
 
-    const database = await db();
+    const database = await db(this.name);
     const result = emptyImportResult();
 
     const put = async <S extends (typeof USER_STORES)[number]>(
@@ -327,7 +349,7 @@ export class LocalStore implements DataStore {
   }
 
   async clearAll(): Promise<void> {
-    const database = await db();
+    const database = await db(this.name);
     const tx = database.transaction([...USER_STORES], 'readwrite');
     await Promise.all(USER_STORES.map((store) => tx.objectStore(store).clear()));
     await tx.done;
