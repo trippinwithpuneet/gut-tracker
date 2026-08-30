@@ -25,7 +25,7 @@ From **Project Settings → API**, copy:
 - the **Project URL**
 - the **anon** / **publishable** key
 
-Both are safe in a browser. Row-level security is what protects the data, and it is enabled on every table in the schema. Do not copy the service-role key; nothing in this codebase uses it.
+Both are safe in a browser. Row-level security is what protects the data, and it is enabled on every table in the schema. Leave the service-role key alone for now — it must never go in the web app's environment. The only thing that uses it is the optional reminder function, which reads it from Supabase's own secrets (see "Optional — daily reminders" below).
 
 ### 2. Apply the schema
 
